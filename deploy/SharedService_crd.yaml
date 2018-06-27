@@ -11,3 +11,10 @@ spec:
     singular: sharedservice
   scope: Namespaced
   version: v1alpha1
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          properties:
+            image:
+              type: string

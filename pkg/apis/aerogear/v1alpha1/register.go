@@ -29,6 +29,10 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&SharedService{},
 		&SharedServiceList{},
+		&SharedServiceSliceList{},
+		&SharedServiceSlice{},
+		&SharedServiceClientList{},
+		&SharedServiceClient{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil

@@ -1,0 +1,6 @@
+apiVersion: "aerogear.org/v1alpha1"
+kind: "SharedService"
+metadata:
+  name: "example"
+spec:
+  image: "docker.io/aerogearcatalog/keycloak-apb:1.0.0-alpha"
