@@ -1,0 +1,4 @@
+apiVersion: "aerogear.org/v1alpha1"
+kind: "SharedService"
+metadata:
+  name: "example"
