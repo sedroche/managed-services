@@ -8,7 +8,6 @@ import (
 	"fmt"
 
 	"github.com/operator-framework/operator-sdk/pkg/sdk"
-	"github.com/operator-framework/operator-sdk/pkg/util/k8sutil"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,13 +15,15 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"github.com/operator-framework/operator-sdk/pkg/util/k8sutil"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	sc "github.com/aerogear/mobile-crd-client/pkg/client/servicecatalog/clientset/versioned"
 )
 
-func NewHandler(k8sClient kubernetes.Interface, sharedServiceClient dynamic.ResourceInterface, operatorNS string) sdk.Handler {
+func NewHandler(k8sClient kubernetes.Interface, sharedServiceClient dynamic.ResourceInterface, operatorNS string, svcCatalog sc.Interface) sdk.Handler {
 	return &Handler{
 		k8client:            k8sClient,
 		operatorNS:          operatorNS,
 		sharedServiceClient: sharedServiceClient,
+		serviceCatalogClient:svcCatalog,
 	}
 }
 
@@ -31,6 +32,7 @@ type Handler struct {
 	k8client            kubernetes.Interface
 	operatorNS          string
 	sharedServiceClient dynamic.ResourceInterface
+	serviceCatalogClient sc.Interface
 }
 
 func (h *Handler) Handle(ctx context.Context, event sdk.Event) error {
