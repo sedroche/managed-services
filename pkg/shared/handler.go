@@ -14,6 +14,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
+	"github.com/operator-framework/operator-sdk/pkg/util/k8sutil"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 func NewHandler(k8sClient kubernetes.Interface, sharedServiceClient dynamic.ResourceInterface, operatorNS string) sdk.Handler {
@@ -111,12 +113,59 @@ func (h *Handler) handleSharedServiceDelete(service *v1alpha1.SharedService) err
 	return nil
 }
 
-func (h *Handler) handleSharedServiceSliceCreateUpdate(service *v1alpha1.SharedServiceSlice) error {
-	fmt.Println("called handleSharedServiceSliceCreateUpdate")
-	return nil
+func provision(serviceType string)error{
+	return  nil
 }
 
-func (h *Handler) handleSharedServiceSliceDelete(service *v1alpha1.SharedServiceSlice) error {
+func checkServiceInstanceReady(sid string)(bool,error)  {
+	return false, nil
+}
+
+func (h *Handler)handleSharedServiceSliceCreateUpdate(service *v1alpha1.SharedServiceSlice)error{
+	fmt.Println("called handleSharedServiceSliceCreateUpdate", service.Status.Phase, service.Status.Action)
+	ssCopy := service.DeepCopy()
+	if ssCopy.Status.Phase != v1alpha1.AcceptedPhase && ssCopy.Status.Phase != v1alpha1.CompletePhase{
+		ssCopy.Status.Phase = v1alpha1.AcceptedPhase
+		return sdk.Update(ssCopy)
+	}
+	if ssCopy.Status.Action == "provisioned"{
+		// look up the secret and save to the shared service slice and set the status to complete
+		ssCopy.Status.Phase = v1alpha1.CompletePhase
+		return sdk.Update(ssCopy)
+	}
+	if ssCopy.Status.Action == "provisioning"{
+		fmt.Print("provisioning")
+		return nil
+	}
+
+
+	if ssCopy.Status.Action != "provisioning"{
+		err := provision(ssCopy.Spec.ServiceType)
+		if err != nil && !apierrors.IsNotFound(err){
+			// if is a not found err return
+			return err
+		}
+		ssCopy.Status.Action = "provisioning"
+		return sdk.Update(ssCopy)
+	}
+
+	ready, err := checkServiceInstanceReady("")
+	if err != nil{
+		return err
+	}
+	if ready{
+		ssCopy.Status.Phase = v1alpha1.CompletePhase
+		// get the secret name and add to the service slice
+		ssCopy.Status.CredentialREf = "somesecret"
+		return sdk.Update(ssCopy)
+	}
+
+	// do provision
+
+	return sdk.Update(ssCopy)
+}
+
+func (h *Handler)handleSharedServiceSliceDelete(service *v1alpha1.SharedServiceSlice)error{
 	fmt.Println("called handleSharedServiceSliceDelete")
 	return nil
 }

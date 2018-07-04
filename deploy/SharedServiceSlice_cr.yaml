@@ -2,3 +2,5 @@ apiVersion: "aerogear.org/v1alpha1"
 kind: "SharedServiceSlice"
 metadata:
   name: "example"
+spec:
+  serviceType: "keycloak"
