@@ -1,6 +1,0 @@
-apiVersion: "aerogear.org/v1alpha1"
-kind: "SharedServiceClient"
-metadata:
-  name: "example"
-spec:
-  clientType: "mobile"

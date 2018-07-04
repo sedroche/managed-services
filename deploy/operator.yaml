@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shared-service-operator-poc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: shared-service-operator-poc
+  template:
+    metadata:
+      labels:
+        name: shared-service-operator-poc
+    spec:
+      containers:
+        - name: shared-service-operator-poc
+          image: pbrookes/shared-service-operator:latest
+          command:
+          - shared-service-operator-poc
+          imagePullPolicy: Always
+          env:
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
