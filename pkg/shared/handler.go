@@ -16,6 +16,7 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/util/k8sutil"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	sc "github.com/aerogear/mobile-crd-client/pkg/client/servicecatalog/clientset/versioned"
+
 )
 
 func NewHandler(k8sClient kubernetes.Interface, sharedServiceClient dynamic.ResourceInterface, operatorNS string, svcCatalog sc.Interface) sdk.Handler {
