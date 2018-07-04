@@ -15,7 +15,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"github.com/operator-framework/operator-sdk/pkg/util/k8sutil"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	sc "github.com/aerogear/mobile-crd-client/pkg/client/servicecatalog/clientset/versioned"
+	sc "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 
 )
 
@@ -65,7 +65,6 @@ func (h *Handler) Handle(ctx context.Context, event sdk.Event) error {
 func (h *Handler) handleSharedServiceCreateUpdate(service *v1alpha1.SharedService) error {
 	fmt.Println("called handleSharedServiceCreateUpdate ")
 	fmt.Printf("service: %+v", service)
-	fmt.Printf("sc: %+v", sc)
 	if service.Status.Ready {
 		//delete the pod
 	}
@@ -116,7 +115,8 @@ func (h *Handler) handleSharedServiceDelete(service *v1alpha1.SharedService) err
 	return nil
 }
 
-func provision(serviceType string)error{
+func (h *Handler)provision(serviceType string)error{
+
 	return  nil
 }
 
@@ -143,7 +143,7 @@ func (h *Handler)handleSharedServiceSliceCreateUpdate(service *v1alpha1.SharedSe
 
 
 	if ssCopy.Status.Action != "provisioning"{
-		err := provision(ssCopy.Spec.ServiceType)
+		err := h.provision(ssCopy.Spec.ServiceType)
 		if err != nil && !apierrors.IsNotFound(err){
 			// if is a not found err return
 			return err
