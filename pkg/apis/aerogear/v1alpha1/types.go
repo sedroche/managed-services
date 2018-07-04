@@ -50,10 +50,14 @@ type SharedServiceSlice struct {
 }
 
 type SharedServiceSliceSpec struct {
+	ServiceType string `json:"serviceType"`
 	// Fill me
 }
 type SharedServiceSliceStatus struct {
 	// Fill me
+	Phase Phase `json:"phase"`
+	Action string `json:"action"`
+	CredentialREf string `json:"secretRef"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -80,4 +84,11 @@ type SharedServiceClientStatus struct {
 	// Fill me
 }
 
+
+type Phase string
+
+var(
+	AcceptedPhase Phase = "accepted"
+	CompletePhase Phase = "complete"
+)
 
