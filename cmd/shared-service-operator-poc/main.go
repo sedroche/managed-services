@@ -46,7 +46,7 @@ func main() {
 	k8client := k8sclient.GetKubeClient()
 
 	resourceClient, _, err := k8sclient.GetResourceClient(resource, SharedServicekind, namespace)
-	sdk.Handle(shared.NewHandler(k8client, resourceClient, "default", svcClient))
+	sdk.Handle(shared.NewHandler(k8client, resourceClient, namespace, svcClient))
 	sdk.Run(context.TODO())
 }
 

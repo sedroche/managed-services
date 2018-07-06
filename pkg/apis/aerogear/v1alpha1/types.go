@@ -51,13 +51,18 @@ type SharedServiceSlice struct {
 
 type SharedServiceSliceSpec struct {
 	ServiceType string `json:"serviceType"`
+	Params map[string]interface{} `json:"params"`
 	// Fill me
 }
 type SharedServiceSliceStatus struct {
 	// Fill me
 	Phase Phase `json:"phase"`
 	Action string `json:"action"`
-	CredentialREf string `json:"secretRef"`
+	CredentialRef string `json:"credentialRef"`
+	// the ServiceInstanceID that represents the slice
+	SliceServiceInstance string `json:"slice_service_instance"`
+	// the ServiceInstanceID that represents the parent shared service
+	SharedServiceInstance string `json:"shared_service_instance"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
