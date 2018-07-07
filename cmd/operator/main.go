@@ -4,7 +4,7 @@ import (
 	"context"
 	"runtime"
 
-	"github.com/aerogear/shared-service-operator-poc/pkg/shared"
+	"github.com/aerogear/managed-services/pkg/managed"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 	"github.com/operator-framework/operator-sdk/pkg/k8sclient"
 	"github.com/operator-framework/operator-sdk/pkg/sdk"
@@ -46,7 +46,7 @@ func main() {
 	k8client := k8sclient.GetKubeClient()
 
 	resourceClient, _, err := k8sclient.GetResourceClient(resource, SharedServicekind, namespace)
-	sdk.Handle(shared.NewHandler(k8client, resourceClient, namespace, svcClient))
+	sdk.Handle(managed.NewHandler(k8client, resourceClient, namespace, svcClient))
 	sdk.Run(context.TODO())
 }
 

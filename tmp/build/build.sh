@@ -11,8 +11,8 @@ fi
 
 BIN_DIR="$(pwd)/tmp/_output/bin"
 mkdir -p ${BIN_DIR}
-PROJECT_NAME="shared-service-operator-poc"
-REPO_PATH="github.com/aerogear/shared-service-operator-poc"
-BUILD_PATH="${REPO_PATH}/cmd/${PROJECT_NAME}"
+PROJECT_NAME="managed-services"
+REPO_PATH="github.com/aerogear/managed-services"
+BUILD_PATH="${REPO_PATH}/cmd/operator"
 echo "building "${PROJECT_NAME}"..."
 GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ${BIN_DIR}/${PROJECT_NAME} $BUILD_PATH

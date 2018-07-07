@@ -1,25 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: shared-service-operator-poc
+  name: managed-services
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: shared-service-operator-poc
+      name: managed-services
   template:
     metadata:
       labels:
-        name: shared-service-operator-poc
+        name: managed-services
     spec:
       containers:
-        - name: shared-service-operator-poc
-          image: pbrookes/shared-service-operator:latest
+        - name: managed-services
+          image: maleck13/managed-services-operator
           command:
-          - shared-service-operator-poc
+          - managed-services
           imagePullPolicy: Always
-          env:
-            - name: WATCH_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace

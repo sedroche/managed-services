@@ -1,9 +1,9 @@
-package shared
+package managed
 
 import (
 	"context"
 
-	"github.com/aerogear/shared-service-operator-poc/pkg/apis/aerogear/v1alpha1"
+	"github.com/aerogear/managed-services/pkg/apis/aerogear/v1alpha1"
 
 	"fmt"
 

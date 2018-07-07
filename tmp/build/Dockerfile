@@ -1,6 +1,6 @@
 FROM alpine:3.6
 
-RUN adduser -D shared-service-operator-poc
-USER shared-service-operator-poc
+RUN adduser -D managed-services
+USER managed-services
 
-ADD tmp/_output/bin/shared-service-operator-poc /usr/local/bin/shared-service-operator-poc
+ADD tmp/_output/bin/managed-services /usr/local/bin/managed-services

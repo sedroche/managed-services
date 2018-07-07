@@ -1,7 +1,7 @@
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: shared-service-operator-poc
+  name: managed-services
 rules:
 - apiGroups:
   - aerogear.org
@@ -36,11 +36,11 @@ rules:
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: default-account-shared-service-operator-poc
+  name: default-account-managed-services
 subjects:
 - kind: ServiceAccount
   name: default
 roleRef:
   kind: Role
-  name: shared-service-operator-poc
+  name: managed-services
   apiGroup: rbac.authorization.k8s.io
