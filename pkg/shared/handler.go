@@ -89,7 +89,7 @@ func (h *Handler)allocateSharedServiceInstanceWithCapacity(serviceType string)(*
 }
 
 
-func (h*Handler) getParamValue(slice *v1alpha1.SharedServiceSlice, key string, paramSchema *schema.Schema)(interface{}, error) {
+func (h*Handler) getParamValue(slice *v1alpha1.SharedServiceSlice, sharedServiceInstanceID string, key string, paramSchema *schema.Schema)(interface{}, error) {
 	// todo don't have  sharedserviceconfig to work with yet but we will do the following
 	// look up the param in the shared service config
 	// look up the param in the shared service instance secret (named after the service)
@@ -98,45 +98,45 @@ func (h*Handler) getParamValue(slice *v1alpha1.SharedServiceSlice, key string, p
 	//hard coded for keycloak right now
 	// get the secret we create from the apb
 	//TODO this is currently broken but as we cannot deploy more than one keycloak until we change the apb it works !!
-	superSecretCreds, err := h.k8client.CoreV1().Secrets(h.operatorNS).Get(slice.Spec.ServiceType, metav1.GetOptions{})
+
+	ls := metav1.LabelSelector{MatchLabels:map[string]string{"serviceName":slice.Spec.ServiceType, "serviceInstanceID":sharedServiceInstanceID}}
+	fmt.Println("creating label selector ", ls.String())
+	superSecretCredList, err := h.k8client.CoreV1().Secrets(h.operatorNS).List(metav1.ListOptions{LabelSelector:"serviceInstanceID="+sharedServiceInstanceID + ",serviceName="+slice.Spec.ServiceType})
 	if err != nil && ! apierrors.IsNotFound(err){
 		return nil, errors.Wrap(err, "failed to find credentials secret for service ")
+	}
+	if len(superSecretCredList.Items) > 1{
+		fmt.Println("found more than one secret this is bad")
+		return nil, errors.New("found more than one credential secret for service instance "+ slice.Status.SharedServiceInstance)
 	}
 
 	if v, ok := slice.Spec.Params[key];ok{
 		return v, nil
 	}
-	if superSecretCreds != nil{
-	  if v, ok := superSecretCreds.Data[key]; ok {
-		  return string(v), nil
-	  }
+	superSecretCreds := superSecretCredList.Items[0]
+
+	if v, ok := superSecretCreds.Data[key]; ok {
+	  return string(v), nil
 	}
+
 	return nil, nil
 	//take a service look up the SharedServiceConfig for that service pull out the default params as a map of key values
 
 }
 
 //TODO not happy with the signature here we are returning the parent and slice ids as strings which is not clear
-func (h *Handler)provisionSlice(serviceSlice *v1alpha1.SharedServiceSlice, serviceType, plan string)(string, string, error){
+func (h *Handler)provisionSlice(serviceSlice *v1alpha1.SharedServiceSlice, si *v1beta1.ServiceInstance, serviceType, plan string)(string, error){
 	fmt.Println("provisioning slice")
 	// find shared service with capacity of the given type
-	si, err := h.allocateSharedServiceInstanceWithCapacity(serviceType)
-	if err != nil{
-		return  "","",errors.Wrap(err, "unexpected error when looking for a service instance with capacity")
-	}
-	if si == nil{
-		// todo update status
-		fmt.Println("no si found with capcity")
-		return "","", errors.New("failed to find a service instance with capacity")
-	}
+
 
 	availablePlans, err := h.serviceCatalogClient.ServicecatalogV1beta1().ClusterServicePlans().List(metav1.ListOptions{FieldSelector:"spec.externalName=shared"})
 	if err != nil{
-		return "","", errors.Wrap(err, "failed to get service plans")
+		return "", errors.Wrap(err, "failed to get service plans")
 	}
 	if len(availablePlans.Items) != 1{
 		//this is bad
-		return "","",errors.New(fmt.Sprintf("expected a single plan but found %v",len(availablePlans.Items)))
+		return "",errors.New(fmt.Sprintf("expected a single plan but found %v",len(availablePlans.Items)))
 	}
 	ap := availablePlans.Items[0]
 	fmt.Println("plan name ", ap.Spec.ExternalName, string(ap.Spec.ServiceInstanceCreateParameterSchema.Raw))
@@ -150,10 +150,10 @@ func (h *Handler)provisionSlice(serviceSlice *v1alpha1.SharedServiceSlice, servi
 	if paramSchema != nil {
 		for name, p := range paramSchema.Properties {
 			fmt.Println("property ", p.Type, name)
-			val , err := h.getParamValue(serviceSlice,name,p)
+			val , err := h.getParamValue(serviceSlice, si.Spec.ExternalID, name,p)
 			if err != nil{
 				// have to bail out no way forward
-				return "","", err
+				return "", err
 			}
 			params[name] = val
 		}
@@ -161,7 +161,7 @@ func (h *Handler)provisionSlice(serviceSlice *v1alpha1.SharedServiceSlice, servi
 
 	pData, err := json.Marshal(params)
 	if err != nil{
-		return "","",errors.Wrap(err,"failed to encode params")
+		return "",errors.Wrap(err,"failed to encode params")
 	}
 
 	fmt.Println("params for slice provision ", string(pData))
@@ -190,9 +190,9 @@ func (h *Handler)provisionSlice(serviceSlice *v1alpha1.SharedServiceSlice, servi
 	fmt.Println("would have provisioned slice ", provisionInstance, "shared service ", si)
 	csi, err := h.serviceCatalogClient.ServicecatalogV1beta1().ServiceInstances(h.operatorNS).Create(provisionInstance)
 	if err != nil{
-		return "","",err
+		return "",err
 	}
-	return si.Name, csi.Name, nil
+	return csi.Name, nil
 }
 
 func (h *Handler)checkServiceInstanceReady(sid string)(bool,error)  {
@@ -244,23 +244,38 @@ func (h *Handler)handleSharedServiceSliceCreateUpdate(service *v1alpha1.SharedSe
 		}
 		return nil
 	}
+	if ssCopy.Labels == nil{
+		ssCopy.Labels = map[string]string{}
+	}
 
-
-	if ssCopy.Status.Action != "provisioning"{
-		sharedServiceID, sliceID ,err := h.provisionSlice(ssCopy,ssCopy.Spec.ServiceType, "shared")
+	if ssCopy.Status.Action != "provisioning" && ssCopy.Status.SharedServiceInstance == "" {
+		si, err := h.allocateSharedServiceInstanceWithCapacity(ssCopy.Spec.ServiceType)
+		if err != nil{
+			return  errors.Wrap(err, "unexpected error when looking for a service instance with capacity")
+		}
+		if si == nil{
+			// todo update status
+			fmt.Println("no si found with capcity")
+			return errors.New("failed to find a service instance with capacity")
+		}
+		ssCopy.Status.SharedServiceInstance = si.Name
+		ssCopy.Labels["SharedServiceInstance"] = si.Name
+		return sdk.Update(ssCopy)
+	}
+	if ssCopy.Status.Action != "provisioning" && ssCopy.Status.SharedServiceInstance != ""{
+		ssi , err := h.serviceCatalogClient.ServicecatalogV1beta1().ServiceInstances(h.operatorNS).Get(ssCopy.Status.SharedServiceInstance, metav1.GetOptions{})
+		if err !=nil{
+			return err
+		}
+		sliceID ,err := h.provisionSlice(ssCopy, ssi,ssCopy.Spec.ServiceType, "shared")
 		if err != nil && !apierrors.IsNotFound(err){
 			// if is a not found err return
 			return err
 		}
 		ssCopy.Status.Action = "provisioning"
-		// not sure what I want here yet
-		if ssCopy.Labels == nil{
-			ssCopy.Labels = map[string]string{}
-		}
+
 		ssCopy.Labels["SliceServiceInstance"] = sliceID
-		ssCopy.Labels["SharedServiceInstance"] = sharedServiceID
 		ssCopy.Status.SliceServiceInstance= sliceID
-		ssCopy.Status.SharedServiceInstance= sharedServiceID
 		return sdk.Update(ssCopy)
 	}
 
