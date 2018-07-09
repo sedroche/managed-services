@@ -11,7 +11,7 @@ fi
 
 BIN_DIR="$(pwd)/tmp/_output/bin"
 mkdir -p ${BIN_DIR}
-PROJECT_NAME="managed-services"
+PROJECT_NAME="operator"
 REPO_PATH="github.com/aerogear/managed-services"
 BUILD_PATH="${REPO_PATH}/cmd/operator"
 echo "building "${PROJECT_NAME}"..."
