@@ -4,7 +4,7 @@ import (
 	"context"
 	"runtime"
 
-	"github.com/aerogear/managed-services/pkg/managed"
+	"github.com/aerogear/managed-services/pkg/operator/managed"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 	"github.com/operator-framework/operator-sdk/pkg/k8sclient"
 	"github.com/operator-framework/operator-sdk/pkg/sdk"
