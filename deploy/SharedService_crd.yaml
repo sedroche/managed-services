@@ -18,3 +18,12 @@ spec:
           properties:
             image:
               type: string
+            clusterServiceClassExternalName:
+              type: string
+            clusterServiceClassName:
+              type: string
+            params:
+              description: parameteres for creating the slices
+              type: object
+            serviceInstance:
+              type: string

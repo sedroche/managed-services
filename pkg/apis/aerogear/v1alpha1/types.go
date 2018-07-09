@@ -23,14 +23,18 @@ type SharedService struct {
 
 type SharedServiceSpec struct {
 	//Image the docker image to run to provision the service
-	Image string `json:"image"`
+	Image                           string                 `json:"image"`
+	ClusterServiceClassName         string                 `json:"cluster_service_class_name"`
+	ClusterServiceClassExternalName string                 `json:"cluster_service_class_external_name"`
+	Params                          map[string]interface{} `json:"params"`
 }
 type SharedServiceStatus struct {
 	// Fill me
-	Ready bool `json:"ready"`
-	Status string `json:"status"`  // provisioning, failed, provisioned
+	Ready           bool   `json:"ready"`
+	Status          string `json:"status"` // provisioning, failed, provisioned
+	Phase           Phase  `json:"phase"`
+	ServiceInstance string `json:"service_instance"`
 }
-
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -50,13 +54,13 @@ type SharedServiceSlice struct {
 }
 
 type SharedServiceSliceSpec struct {
-	ServiceType string `json:"serviceType"`
-	Params map[string]interface{} `json:"params"`
+	ServiceType string                 `json:"serviceType"`
+	Params      map[string]interface{} `json:"params"`
 	// Fill me
 }
 type SharedServiceSliceStatus struct {
 	// Fill me
-	Phase Phase `json:"phase"`
+	Phase  Phase  `json:"phase"`
 	Action string `json:"action"`
 	// the ServiceInstanceID that represents the slice
 	SliceServiceInstance string `json:"slice_service_instance"`
@@ -88,11 +92,12 @@ type SharedServiceClientStatus struct {
 	// Fill me
 }
 
-
 type Phase string
 
-var(
-	AcceptedPhase Phase = "accepted"
-	CompletePhase Phase = "complete"
+var (
+	NoPhase           Phase = ""
+	AcceptedPhase     Phase = "accepted"
+	ProvisioningPhase Phase = "provisioning"
+	CompletePhase     Phase = "complete"
+	FailedPhase       Phase = "failed"
 )
-
