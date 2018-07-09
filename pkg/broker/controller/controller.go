@@ -71,6 +71,8 @@ func CreateController() Controller {
 
 func (c *userProvidedController) Catalog() (*brokerapi.Catalog, error) {
 	glog.Info("Catalog()")
+	//look up the sharedservice in the namespace
+
 	return &brokerapi.Catalog{
 		Services: []*brokerapi.Service{
 			{

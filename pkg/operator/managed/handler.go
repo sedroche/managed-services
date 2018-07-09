@@ -105,8 +105,8 @@ func (h*Handler) getParamValue(slice *v1alpha1.SharedServiceSlice, sharedService
 	if err != nil && ! apierrors.IsNotFound(err){
 		return nil, errors.Wrap(err, "failed to find credentials secret for service ")
 	}
-	if len(superSecretCredList.Items) > 1{
-		fmt.Println("found more than one secret this is bad")
+	if len(superSecretCredList.Items) != 1{
+		fmt.Println("found none or more than one secret this is bad")
 		return nil, errors.New("found more than one credential secret for service instance "+ slice.Status.SharedServiceInstance)
 	}
 
@@ -130,13 +130,13 @@ func (h *Handler)provisionSlice(serviceSlice *v1alpha1.SharedServiceSlice, si *v
 	// find shared service with capacity of the given type
 
 
-	availablePlans, err := h.serviceCatalogClient.ServicecatalogV1beta1().ClusterServicePlans().List(metav1.ListOptions{FieldSelector:"spec.externalName=shared"})
+	availablePlans, err := h.serviceCatalogClient.ServicecatalogV1beta1().ClusterServicePlans().List(metav1.ListOptions{FieldSelector:"spec.externalName=managed"})
 	if err != nil{
 		return "", errors.Wrap(err, "failed to get service plans")
 	}
 	if len(availablePlans.Items) != 1{
 		//this is bad
-		return "",errors.New(fmt.Sprintf("expected a single plan but found %v",len(availablePlans.Items)))
+		return "",errors.New(fmt.Sprintf("expected a single plan with the name shared but found %v",len(availablePlans.Items)))
 	}
 	ap := availablePlans.Items[0]
 	fmt.Println("plan name ", ap.Spec.ExternalName, string(ap.Spec.ServiceInstanceCreateParameterSchema.Raw))
@@ -238,8 +238,6 @@ func (h *Handler)handleSharedServiceSliceCreateUpdate(service *v1alpha1.SharedSe
 		if ready{
 			ssCopy.Status.Phase = v1alpha1.CompletePhase
 			ssCopy.Status.Action = "provisioned"
-			// get the secret name and add to the service slice
-			ssCopy.Status.CredentialRef = "somesecret"
 			return sdk.Update(ssCopy)
 		}
 		return nil
@@ -267,13 +265,12 @@ func (h *Handler)handleSharedServiceSliceCreateUpdate(service *v1alpha1.SharedSe
 		if err !=nil{
 			return err
 		}
-		sliceID ,err := h.provisionSlice(ssCopy, ssi,ssCopy.Spec.ServiceType, "shared")
+		sliceID ,err := h.provisionSlice(ssCopy, ssi,ssCopy.Spec.ServiceType, "managed")
 		if err != nil && !apierrors.IsNotFound(err){
 			// if is a not found err return
 			return err
 		}
 		ssCopy.Status.Action = "provisioning"
-
 		ssCopy.Labels["SliceServiceInstance"] = sliceID
 		ssCopy.Status.SliceServiceInstance= sliceID
 		return sdk.Update(ssCopy)
@@ -285,7 +282,12 @@ func (h *Handler)handleSharedServiceSliceCreateUpdate(service *v1alpha1.SharedSe
 }
 
 func (h *Handler)handleSharedServiceSliceDelete(service *v1alpha1.SharedServiceSlice)error{
-	fmt.Println("called handleSharedServiceSliceDelete")
+	if err := h.serviceCatalogClient.ServicecatalogV1beta1().ServiceInstances(h.operatorNS).Delete(service.Status.SliceServiceInstance, &metav1.DeleteOptions{}); err != nil{
+		if apierrors.IsNotFound(err){
+			return nil
+		}
+		return errors.Wrap(err,"slice was deleted but failed to delete the backing service instance")
+	}
 	return nil
 }
 

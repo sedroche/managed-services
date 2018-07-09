@@ -58,7 +58,6 @@ type SharedServiceSliceStatus struct {
 	// Fill me
 	Phase Phase `json:"phase"`
 	Action string `json:"action"`
-	CredentialRef string `json:"credentialRef"`
 	// the ServiceInstanceID that represents the slice
 	SliceServiceInstance string `json:"slice_service_instance"`
 	// the ServiceInstanceID that represents the parent shared service
