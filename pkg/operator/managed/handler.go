@@ -43,7 +43,6 @@ type Handler struct {
 }
 
 func (h *Handler) Handle(ctx context.Context, event sdk.Event) error {
-
 	switch o := event.Object.(type) {
 	case *v1alpha1.SharedService:
 		if event.Deleted {
@@ -164,8 +163,7 @@ func (h *Handler) handleSharedServiceCreateUpdate(service *v1alpha1.SharedServic
 }
 
 func (h *Handler) handleSharedServiceDelete(service *v1alpha1.SharedService) error {
-	fmt.Println("called handleSharedServiceDelete")
-	return nil
+	return h.serviceCatalogClient.ServicecatalogV1beta1().ServiceInstances(service.Namespace).Delete(service.Status.ServiceInstance, &metav1.DeleteOptions{})
 }
 
 func (h *Handler) allocateSharedServiceInstanceWithCapacity(serviceType string) (*v1beta1.ServiceInstance, error) {
@@ -222,7 +220,7 @@ func (h *Handler) provisionSlice(serviceSlice *v1alpha1.SharedServiceSlice, si *
 	}
 	if len(availablePlans.Items) != 1 {
 		//this is bad
-		return "",errors.New(fmt.Sprintf("expected a single plan with the name shared but found %v",len(availablePlans.Items))
+		return "", errors.New(fmt.Sprintf("expected a single plan with the name shared but found %v", len(availablePlans.Items)))
 	}
 	ap := availablePlans.Items[0]
 	fmt.Println("plan name ", ap.Spec.ExternalName, string(ap.Spec.ServiceInstanceCreateParameterSchema.Raw))
